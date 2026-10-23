@@ -13,3 +13,17 @@ yarn-debug.log*
 yarn-error.log*
 .vite/
 coverage/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+venv/
+.venv/
+env/
+.env.backend
+
+# Docker
+pgdata/

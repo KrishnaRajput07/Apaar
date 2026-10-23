@@ -33,15 +33,40 @@ function LivePhotoModal({ onClose, onDone }: { onClose: () => void; onDone: () =
 
   const openCamera = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 320, height: 320 } });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
+      // Check if camera API is available
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setStep('nocamera');
+        return;
       }
+      // Request camera with fallback constraints
+      let stream: MediaStream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'user', width: { ideal: 320 }, height: { ideal: 320 } },
+          audio: false,
+        });
+      } catch {
+        // Fallback: try without facingMode (some desktops don't support it)
+        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      }
+      streamRef.current = stream;
+      // Wait for next render cycle to set srcObject
+      requestAnimationFrame(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.play().catch(() => {});
+        }
+      });
       setStep('camera');
-    } catch {
-      setStep('nocamera');
+    } catch (err: any) {
+      // Provide specific error context
+      if (err?.name === 'NotAllowedError' || err?.name === 'PermissionDeniedError') {
+        setStep('nocamera');
+      } else if (err?.name === 'NotFoundError' || err?.name === 'DevicesNotFoundError') {
+        setStep('nocamera');
+      } else {
+        setStep('nocamera');
+      }
     }
   };
 
